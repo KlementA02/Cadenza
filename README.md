@@ -1,2 +1,3 @@
-# Cadenza
-Making a music player of the experiences from my first music player
+# cadenza
+
+A new Flutter project.
