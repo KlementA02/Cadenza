@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:cadenza/controllers/player_controller.dart';
 import 'package:cadenza/screens/now_playing_screen.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +16,7 @@ class AllSongsScreen extends StatefulWidget {
 }
 
 class _AllSongsScreenState extends State<AllSongsScreen> {
-  //bool isMiniPlayerVisible = false; // Tracks the visibility of the mini player
+  final ScrollController _scrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -24,98 +26,183 @@ class _AllSongsScreenState extends State<AllSongsScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            SizedBox(
-              height: MediaQuery.of(context).size.height,
-              child: Obx(() {
-                if (controller.currentPlaylist.isEmpty) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Builder(builder: (context) {
-                      final songList = controller.currentPlaylist;
-                      return ListView.builder(
-                        itemCount: songList.length,
-                        itemBuilder: (context, index) {
-                          final song = songList[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: ListTile(
-                              leading: QueryArtworkWidget(
-                                id: song.id,
-                                type: ArtworkType.AUDIO,
-                                artworkBorder: BorderRadius.circular(6),
-                                artworkHeight: 50,
-                                artworkWidth: 50,
-                                keepOldArtwork: true,
-                                artworkFit: BoxFit.cover,
-                                nullArtworkWidget: Container(
-                                  height: 50,
-                                  width: 50,
-                                  color: Colors.grey[800],
-                                  child: const Icon(Icons.music_note,
-                                      size: 25, color: Colors.white),
-                                ),
-                              ),
-                              title: Text(
-                                song.displayNameWOExt,
-                              ),
-                              subtitle: Text(song.artist ?? "Unknown Artist"),
-                              onTap: () {
-                                if (controller.currentSongRx.value != null &&
-                                    controller.currentSongRx.value!.id ==
-                                        song.id) {
-                                  // If the song is already playing, do nothing
-                                  Get.to(() => NowPlayingScreen());
-                                } else if (controller.currentSongRx.value !=
-                                        null &&
-                                    controller.currentSongRx.value!.id !=
-                                        song.id) {
-                                  // If a different song is playing, stop it first
-                                  controller.stop();
-                                  controller.playSong(song);
-                                  controller.setPlaylist(songList,
-                                      startIndex: index);
-                                  Get.to(() => NowPlayingScreen());
-                                } else {
-                                  controller.playSong(song);
-                                  controller.setPlaylist(songList,
-                                      startIndex: index);
-                                  Get.to(() => NowPlayingScreen());
-                                }
-                              },
+            Column(
+              children: [
+                // Order Type Bar
+                Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Obx(() => Row(
+                          children: [
+                            _buildOrderChip(
+                              'Title A-Z',
+                              OrderType.ASC_OR_SMALLER,
+                              controller,
                             ),
-                          );
-                        },
+                            _buildOrderChip(
+                              'Title Z-A',
+                              OrderType.DESC_OR_GREATER,
+                              controller,
+                            ),
+                            _buildOrderChip2(
+                              'Artist',
+                              SongSortType.ARTIST,
+                              controller,
+                            ),
+                            _buildOrderChip2(
+                              'Album',
+                              SongSortType.ALBUM,
+                              controller,
+                            ),
+                            _buildOrderChip2(
+                              'Duration',
+                              SongSortType.DURATION,
+                              controller,
+                            ),
+                            _buildOrderChip2(
+                              'Date Added',
+                              SongSortType.DATE_ADDED,
+                              controller,
+                            ),
+                            _buildOrderChip2(
+                              'Size',
+                              SongSortType.SIZE,
+                              controller,
+                            ),
+                          ],
+                        )),
+                  ),
+                ),
+                // Existing ListView
+                Expanded(
+                  child: Obx(() {
+                    if (controller.currentPlaylist.isEmpty) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
                       );
-                    }),
-                  );
-                }
-              }),
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Builder(builder: (context) {
+                          final songList = controller.currentPlaylist;
+                          return ListView.builder(
+                            controller: _scrollController,
+                            itemCount: songList.length,
+                            itemBuilder: (context, index) {
+                              final song = songList[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: ListTile(
+                                  leading: QueryArtworkWidget(
+                                    id: song.id,
+                                    type: ArtworkType.AUDIO,
+                                    artworkBorder: BorderRadius.circular(6),
+                                    artworkHeight: 50,
+                                    artworkWidth: 50,
+                                    keepOldArtwork: true,
+                                    artworkFit: BoxFit.cover,
+                                    nullArtworkWidget: Container(
+                                      height: 50,
+                                      width: 50,
+                                      color: Colors.grey[800],
+                                      child: const Icon(Icons.music_note,
+                                          size: 25, color: Colors.white),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    song.displayNameWOExt,
+                                  ),
+                                  subtitle:
+                                      Text(song.artist ?? "Unknown Artist"),
+                                  onTap: () {
+                                    if (controller.currentSongRx.value !=
+                                            null &&
+                                        controller.currentSongRx.value!.id ==
+                                            song.id) {
+                                      // If the song is already playing, do nothing
+                                      Get.to(() => NowPlayingScreen());
+                                    } else if (controller.currentSongRx.value !=
+                                            null &&
+                                        controller.currentSongRx.value!.id !=
+                                            song.id) {
+                                      // If a different song is playing, stop it first
+                                      controller.stop();
+                                      controller.playSong(song);
+                                      controller.setPlaylist(songList,
+                                          startIndex: index);
+                                      Get.to(() => NowPlayingScreen());
+                                    } else {
+                                      controller.playSong(song);
+                                      controller.setPlaylist(songList,
+                                          startIndex: index);
+                                      Get.to(() => NowPlayingScreen());
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                      );
+                    }
+                  }),
+                ),
+              ],
             ),
-
-            // Mini Player
-            // MiniPlayerWidget(
-            //     isMiniPlayerVisible: isMiniPlayerVisible,
-            //     controller: controller),
+            // Your existing mini player widget
           ],
         ),
-        // floatingActionButton: Padding(
-        //   padding: const EdgeInsets.only(bottom: 100.0),
-        //   child: FloatingActionButton(
-        //     onPressed: () {
-        //       setState(() {
-        //         isMiniPlayerVisible = !isMiniPlayerVisible; // Toggle visibility
-        //       });
-        //     },
-        //     child: const Icon(Iconsax.smileys),
-        //   ),
-        // ),
-        // floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
     );
+  }
+
+  Widget _buildOrderChip(
+      String label, OrderType type, PlayerController controller) {
+    final isSelected = controller.currentOrderType.value == type;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: FilterChip(
+        selected: isSelected,
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : null,
+          ),
+        ),
+        onSelected: (_) => controller.changeOrderType(type),
+        backgroundColor: Theme.of(context).chipTheme.backgroundColor,
+        selectedColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  Widget _buildOrderChip2(
+      String label, SongSortType type, PlayerController controller) {
+    final isSelected = controller.currentSortType.value == type;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: FilterChip(
+        selected: isSelected,
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : null,
+          ),
+        ),
+        onSelected: (_) => controller.changeSortType(type),
+        backgroundColor: Theme.of(context).chipTheme.backgroundColor,
+        selectedColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 }
 
@@ -197,96 +284,131 @@ class _MiniPlayerWidgetState extends State<MiniPlayerWidget>
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDarkTheme
-                  ? Colors.white.withOpacity(0.2)
-                  : Colors.black.withOpacity(0.2),
+                  ? Colors.white.withOpacity(0.15)
+                  : Colors.black.withOpacity(0.15),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: isDarkTheme
-                    ? Colors.black.withOpacity(0.5)
-                    : Colors.grey.withOpacity(0.5),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            // boxShadow: [
+            //   BoxShadow(
+            //     color: isDarkTheme
+            //         ? Colors.black.withOpacity(0.5)
+            //         : Colors.grey.withOpacity(0.5),
+            //     blurRadius: 10,
+            //     offset: const Offset(0, 4),
+            //   ),
+            // ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
               children: [
-                // Spinning Artwork
-                Obx(() {
-                  final currentSong = widget.controller.currentSongRx.value;
-                  if (widget.controller.isPlaying.value) {
-                    _rotationController.repeat(); // Start spinning
-                  } else {
-                    _rotationController.stop(); // Stop spinning
-                  }
-                  return RotationTransition(
-                    turns: _rotationController,
-                    child: QueryArtworkWidget(
-                      id: currentSong?.id ?? 0,
-                      type: ArtworkType.AUDIO,
-                      artworkHeight: 60,
-                      artworkWidth: 60,
-                      keepOldArtwork: true,
-                      artworkFit: BoxFit.cover,
-                      nullArtworkWidget: Container(
-                        height: 60,
-                        width: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey[800],
-                        ),
-                        child: const Icon(Icons.music_note,
-                            size: 25, color: Colors.white),
-                      ),
-                    ),
-                  );
-                }),
-
-                const SizedBox(width: 10),
-
-                // Song Info
-                Expanded(
+                Positioned.fill(
                   child: Obx(() {
                     final currentSong = widget.controller.currentSongRx.value;
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Marquee(
-                          child: Text(
-                            currentSong?.displayNameWOExt ?? "No Song",
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          currentSong?.artist ?? "Unknown Artist",
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                    return QueryArtworkWidget(
+                      id: currentSong?.id ?? 0,
+                      type: ArtworkType.AUDIO,
+                      artworkHeight: double.infinity,
+                      artworkWidth: double.infinity,
+                      artworkFit: BoxFit.cover,
+                      artworkBorder: BorderRadius.circular(12),
+                      keepOldArtwork: true,
+                      nullArtworkWidget: Container(
+                        color: isDarkTheme ? Colors.grey[900] : Colors.white,
+                      ),
                     );
                   }),
                 ),
+                BackdropFilter(
+                  filter: ImageFilter.blur(),
+                  child: Container(
+                    color: isDarkTheme
+                        ? Colors.black.withOpacity(0.7)
+                        : Colors.white.withOpacity(0.7),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      // Spinning Artwork
+                      Obx(() {
+                        final currentSong =
+                            widget.controller.currentSongRx.value;
+                        if (widget.controller.isPlaying.value) {
+                          _rotationController.repeat(); // Start spinning
+                        } else {
+                          _rotationController.stop(); // Stop spinning
+                        }
+                        return RotationTransition(
+                          turns: _rotationController,
+                          child: QueryArtworkWidget(
+                            id: currentSong?.id ?? 0,
+                            type: ArtworkType.AUDIO,
+                            artworkHeight: 60,
+                            artworkWidth: 60,
+                            keepOldArtwork: true,
+                            artworkFit: BoxFit.cover,
+                            nullArtworkWidget: Container(
+                              height: 60,
+                              width: 60,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.grey[800],
+                              ),
+                              child: const Icon(Icons.music_note,
+                                  size: 25, color: Colors.white),
+                            ),
+                          ),
+                        );
+                      }),
 
-                // Play/Pause Button
-                Obx(() {
-                  return IconButton(
-                    icon: Icon(
-                      widget.controller.isPlaying.value
-                          ? Iconsax.pause
-                          : Iconsax.play,
-                      color: Colors.white,
-                    ),
-                    onPressed: widget.controller.togglePlayPause,
-                  );
-                }),
+                      const SizedBox(width: 10),
+
+                      // Song Info
+                      Expanded(
+                        child: Obx(() {
+                          final currentSong =
+                              widget.controller.currentSongRx.value;
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Marquee(
+                                child: Text(
+                                  currentSong?.displayNameWOExt ?? "No Song",
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                currentSong?.artist ?? "Unknown Artist",
+                                style: const TextStyle(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          );
+                        }),
+                      ),
+
+                      // Play/Pause Button
+                      Obx(() {
+                        return IconButton(
+                          icon: Icon(
+                            widget.controller.isPlaying.value
+                                ? Iconsax.pause
+                                : Iconsax.play,
+                            color: Colors.white,
+                          ),
+                          onPressed: widget.controller.togglePlayPause,
+                        );
+                      }),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

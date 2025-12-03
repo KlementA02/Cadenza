@@ -399,60 +399,180 @@ class NowPlayingScreen extends StatelessWidget {
 
 void showPlaylist(BuildContext context) {
   var controller = Get.find<PlayerController>();
+  final ScrollController scrollController = ScrollController();
+
+  // Function to scroll to current song with animation
+  void scrollToCurrentSong() {
+    if (!scrollController.hasClients) return;
+
+    final currentSong = controller.currentSongRx.value;
+    if (currentSong == null) return;
+
+    final currentIndex = controller.currentPlaylist.indexOf(currentSong);
+    if (currentIndex == -1) return;
+
+    final itemHeight = 72.0; // Estimated height of each ListTile
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetPosition = (itemHeight * currentIndex) - (screenHeight * 0.3);
+
+    scrollController.animateTo(
+      targetPosition.clamp(0, scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
 
   showModalBottomSheet(
-      backgroundColor: Colors.black.withOpacity(0.5),
-      context: context,
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          width: MediaQuery.of(context).size.width,
-          child: Obx(
-            () {
-              if (controller.currentPlaylist.isEmpty) {
-                return const Center(
-                  child: Text("No songs in the playlist",
-                      style: TextStyle(color: Colors.white, fontSize: 18)),
-                );
-              } else {
-                return ListView.builder(
-                  itemCount: controller.currentPlaylist.length,
-                  itemBuilder: (context, index) {
-                    final song = controller.currentPlaylist[index];
-                    return ListTile(
-                      leading: QueryArtworkWidget(
-                        id: song.id,
-                        type: ArtworkType.AUDIO,
-                        artworkBorder: BorderRadius.circular(6),
-                        artworkHeight: 50,
-                        artworkWidth: 50,
-                        artworkFit: BoxFit.cover,
-                        nullArtworkWidget: Container(
-                          height: 50,
-                          width: 50,
-                          color: Colors.grey[800],
-                          child: const Icon(Icons.music_note,
-                              size: 25, color: Colors.white),
+    backgroundColor: Colors.black.withOpacity(0.5),
+    context: context,
+    isScrollControlled: true,
+    builder: (context) {
+      // Trigger scroll after the bottom sheet is built and laid out
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => scrollToCurrentSong());
+
+      return SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Playlist title
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Current Playlist',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${controller.currentPlaylist.length} songs',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Playlist
+            Expanded(
+              child: Obx(
+                () {
+                  return ListView.builder(
+                    controller: scrollController,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: controller.currentPlaylist.length,
+                    itemBuilder: (context, index) {
+                      final song = controller.currentPlaylist[index];
+                      final isCurrentSong =
+                          song.id == controller.currentSongRx.value?.id;
+
+                      return TweenAnimationBuilder<double>(
+                        duration: const Duration(milliseconds: 300),
+                        tween: Tween<double>(
+                          begin: 0,
+                          end: isCurrentSong ? 1 : 0,
                         ),
-                      ),
-                      title: Text(song.displayNameWOExt,
-                          style: const TextStyle(color: Colors.white)),
-                      subtitle: Text(song.artist ?? "Unknown Artist",
-                          style: const TextStyle(color: Colors.grey)),
-                      onTap: () {
-                        controller.setPlaylist(controller.currentPlaylist);
-                        controller.playPlaylist(
-                            controller.currentPlaylist, index);
-                        Get.back();
-                      },
-                    );
-                  },
-                );
-              }
-            },
-          ),
-        );
-      });
+                        builder: (context, value, child) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: isCurrentSong
+                                  ? Colors.white.withOpacity(0.1 * value)
+                                  : Colors.transparent,
+                              border: Border(
+                                left: BorderSide(
+                                  color: isCurrentSong
+                                      ? Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(value)
+                                      : Colors.transparent,
+                                  width: 4,
+                                ),
+                              ),
+                            ),
+                            child: ListTile(
+                              leading: QueryArtworkWidget(
+                                id: song.id,
+                                type: ArtworkType.AUDIO,
+                                artworkBorder: BorderRadius.circular(6),
+                                artworkHeight: 50,
+                                artworkWidth: 50,
+                                keepOldArtwork: true,
+                                nullArtworkWidget: Container(
+                                  height: 50,
+                                  width: 50,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[800],
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Icon(
+                                    Icons.music_note,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                song.displayNameWOExt,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: isCurrentSong
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                song.artist ?? 'Unknown Artist',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: isCurrentSong
+                                  ? const Icon(
+                                      Icons.graphic_eq_rounded,
+                                      color: Colors.white,
+                                    )
+                                  : null,
+                              onTap: () {
+                                controller.playPlaylist(
+                                  controller.currentPlaylist,
+                                  index,
+                                );
+                                Navigator.pop(context);
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 void showBpmCategories(BuildContext context, SongModel currentSong) {

@@ -17,6 +17,9 @@ class PlayerController extends GetxController {
   final audioQuery = OnAudioQuery();
   final playIndex = 0.obs;
   final isPlaying = false.obs;
+  final Rx<OrderType> currentOrderType = OrderType.ASC_OR_SMALLER.obs;
+  final Rx<SongSortType> currentSortType = SongSortType.TITLE.obs;
+  final RxBool ignoreCase = true.obs;
 
   final Rx<SongModel?> currentSongRx = Rx<SongModel?>(null);
 
@@ -38,9 +41,20 @@ class PlayerController extends GetxController {
   var playlistSongs = <int, List<SongModel>>{}.obs;
 
   RxList<SongModel> currentPlaylist = <SongModel>[].obs;
+  RxList<SongModel> albumSongs = <SongModel>[].obs;
   RxList<SongModel> searchResults = <SongModel>[].obs;
 
   RxList<AlbumModel> currentAlbum = <AlbumModel>[].obs;
+
+  Future<void> changeOrderType(OrderType newOrder) async {
+    currentOrderType.value = newOrder;
+    await refreshSongs();
+  }
+
+  Future<void> changeSortType(SongSortType newOrder) async {
+    currentSortType.value = newOrder;
+    await refreshSongs();
+  }
 
   // BPM Categories
   final Map<String, RxList<SongModel>> bpmCategories = {
@@ -174,9 +188,24 @@ class PlayerController extends GetxController {
     isLoading.value = true;
     try {
       var fetchedSongs = await audioQuery.querySongs(
-        ignoreCase: true,
-        orderType: OrderType.ASC_OR_SMALLER,
-        sortType: null,
+        ignoreCase: ignoreCase.value,
+        orderType: currentOrderType.value,
+        sortType: currentSortType.value,
+        uriType: UriType.EXTERNAL,
+      );
+      currentPlaylist.assignAll(fetchedSongs);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshSongs() async {
+    isLoading.value = true;
+    try {
+      var fetchedSongs = await audioQuery.querySongs(
+        ignoreCase: ignoreCase.value,
+        orderType: currentOrderType.value,
+        sortType: currentSortType.value,
         uriType: UriType.EXTERNAL,
       );
       currentPlaylist.assignAll(fetchedSongs);
@@ -224,7 +253,7 @@ class PlayerController extends GetxController {
         ignoreCase: true,
         orderType: OrderType.ASC_OR_SMALLER,
       );
-      currentPlaylist.assignAll(songs);
+      albumSongs.assignAll(songs);
     } finally {
       isLoading.value = false;
     }
