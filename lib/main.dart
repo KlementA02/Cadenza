@@ -1,9 +1,9 @@
 import 'package:cadenza/controllers/player_controller.dart';
+import 'package:cadenza/controllers/theme_controller.dart';
 import 'package:cadenza/screens/navigation_screen.dart';
+import 'package:cadenza/themes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-import 'themes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,11 +24,17 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      theme: KAppThemes.lightTheme,
-      darkTheme: KAppThemes.darkTheme,
-      themeMode: ThemeMode.system,
-      home: const NavigationScreen(),
-    );
+    Get.put(ThemeController());
+
+    return Obx(() {
+      final themeController = Get.find<ThemeController>();
+
+      return GetMaterialApp(
+        theme: KAppThemes.buildLightTheme(themeController.accent),
+        darkTheme: KAppThemes.buildDarkTheme(themeController.accent),
+        themeMode: themeController.themeMode,
+        home: const NavigationScreen(),
+      );
+    });
   }
 }

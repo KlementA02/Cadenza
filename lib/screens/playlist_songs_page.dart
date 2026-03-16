@@ -46,7 +46,6 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -97,13 +96,11 @@ class _PlaylistSongsPageState extends State<PlaylistSongsPage> {
                           nullArtworkWidget: Container(
                             height: 50,
                             width: 50,
-                            color: isDarkTheme
-                                ? Colors.grey[850]
-                                : Colors.grey[200],
+                            color: theme.colorScheme.surface,
                             child: Icon(
                               Icons.music_note,
                               color:
-                                  isDarkTheme ? Colors.white54 : Colors.black54,
+                                  theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
                           ),
                         ),

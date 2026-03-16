@@ -16,13 +16,15 @@ class NowPlayingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextEditingController playlistController = TextEditingController();
+    final theme = Theme.of(context);
 
     return Obx(() {
       final currentSong = controller.currentSongRx.value;
       if (currentSong == null || controller.currentPlaylist.isEmpty) {
-        return const Center(
+        return Center(
           child: Text("Select a song to play",
-              style: TextStyle(color: Colors.white, fontSize: 18)),
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(color: theme.colorScheme.onSurface)),
         );
       } else {
         return Stack(
@@ -39,15 +41,17 @@ class NowPlayingScreen extends StatelessWidget {
               keepOldArtwork: true,
               nullArtworkWidget: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: [Colors.redAccent, Colors.grey[900]!]),
+                  gradient: LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.surface
+                  ]),
                 ),
               ),
             ),
             BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
-                color: Colors.black.withOpacity(0.3),
+                color: theme.colorScheme.scrim.withOpacity(0.3),
               ),
             ),
             Scaffold(
@@ -56,10 +60,8 @@ class NowPlayingScreen extends StatelessWidget {
                 title: Marquee(
                   child: Text(
                     currentSong.displayNameWOExt,
-                    style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold, color: Colors.white),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -90,9 +92,9 @@ class NowPlayingScreen extends StatelessWidget {
                       nullArtworkWidget: Container(
                         height: 300,
                         width: 300,
-                        color: Colors.grey[800],
-                        child: const Icon(Icons.music_note,
-                            size: 100, color: Colors.white),
+                        color: theme.colorScheme.surface,
+                        child: Icon(Icons.music_note,
+                            size: 100, color: theme.colorScheme.onSurface),
                       ),
                     ),
                   ),
@@ -102,7 +104,7 @@ class NowPlayingScreen extends StatelessWidget {
                     height: 250,
                     margin: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.15),
+                      color: theme.colorScheme.scrim.withOpacity(0.15),
                       border: Border.all(color: Colors.white, width: 1),
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -171,9 +173,7 @@ class NowPlayingScreen extends StatelessWidget {
                                                   shape: RoundedRectangleBorder(
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                              6)),
-                                                  backgroundColor:
-                                                      Colors.indigo),
+                                                              6))),
                                               child: const Text("Create"),
                                             ),
                                           ],
@@ -184,14 +184,13 @@ class NowPlayingScreen extends StatelessWidget {
                                           side: BorderSide.none,
                                           shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(6)),
-                                          backgroundColor: Colors.indigo),
+                                                  BorderRadius.circular(6))),
                                       child: const Text("Create"),
                                     ),
                                   ],
                                 );
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.playlist_add,
                                 color: Colors.white,
                               ),
@@ -262,8 +261,8 @@ class NowPlayingScreen extends StatelessWidget {
                           width: 270,
                           child: Text(
                             currentSong.artist!,
-                            style: const TextStyle(
-                                fontSize: 16, color: Colors.white),
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(color: Colors.white),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -289,11 +288,11 @@ class NowPlayingScreen extends StatelessWidget {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(_formatDuration(position),
-                                          style: const TextStyle(
-                                              color: Colors.white)),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(color: Colors.white)),
                                       Text(_formatDuration(total),
-                                          style: const TextStyle(
-                                              color: Colors.white)),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(color: Colors.white)),
                                     ],
                                   ),
                                 ),
@@ -301,16 +300,14 @@ class NowPlayingScreen extends StatelessWidget {
                                   value: controller.value.value,
                                   min: 0.0,
                                   max: controller.max.value,
-                                  // max: total.inSeconds
-                                  //     .toDouble()
-                                  //     .clamp(0.0, double.infinity),
                                   onChanged: (value) {
                                     controller.seekTo(
                                         Duration(seconds: value.toInt()));
                                   },
-                                  thumbColor: Colors.purpleAccent.shade400,
-                                  activeColor: Colors.indigo,
-                                  inactiveColor: Colors.grey,
+                                  thumbColor: theme.colorScheme.primary,
+                                  activeColor: theme.colorScheme.primary,
+                                  inactiveColor: theme.colorScheme.onSurface
+                                      .withOpacity(0.3),
                                 ),
                               ],
                             );
@@ -411,7 +408,7 @@ void showPlaylist(BuildContext context) {
     final currentIndex = controller.currentPlaylist.indexOf(currentSong);
     if (currentIndex == -1) return;
 
-    final itemHeight = 72.0; // Estimated height of each ListTile
+    const itemHeight = 72.0; // Estimated height of each ListTile
     final screenHeight = MediaQuery.of(context).size.height;
     final targetPosition = (itemHeight * currentIndex) - (screenHeight * 0.3);
 
@@ -423,7 +420,7 @@ void showPlaylist(BuildContext context) {
   }
 
   showModalBottomSheet(
-    backgroundColor: Colors.black.withOpacity(0.5),
+    backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.95),
     context: context,
     isScrollControlled: true,
     builder: (context) {
@@ -441,7 +438,7 @@ void showPlaylist(BuildContext context) {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -451,20 +448,15 @@ void showPlaylist(BuildContext context) {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Current Playlist',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   Text(
                     '${controller.currentPlaylist.length} songs',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 16,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
@@ -492,13 +484,17 @@ void showPlaylist(BuildContext context) {
                           return Container(
                             decoration: BoxDecoration(
                               color: isCurrentSong
-                                  ? Colors.white.withOpacity(0.1 * value)
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.1 * value)
                                   : Colors.transparent,
                               border: Border(
                                 left: BorderSide(
                                   color: isCurrentSong
                                       ? Theme.of(context)
-                                          .primaryColor
+                                          .colorScheme
+                                          .primary
                                           .withOpacity(value)
                                       : Colors.transparent,
                                   width: 4,
@@ -517,12 +513,14 @@ void showPlaylist(BuildContext context) {
                                   height: 50,
                                   width: 50,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey[800],
+                                    color:
+                                        Theme.of(context).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.music_note,
-                                    color: Colors.white,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                     size: 30,
                                   ),
                                 ),

@@ -105,9 +105,13 @@ class _AllSongsScreenState extends State<AllSongsScreen> {
                                     nullArtworkWidget: Container(
                                       height: 50,
                                       width: 50,
-                                      color: Colors.grey[800],
-                                      child: const Icon(Icons.music_note,
-                                          size: 25, color: Colors.white),
+                                      color:
+                                          Theme.of(context).colorScheme.surface,
+                                      child: Icon(Icons.music_note,
+                                          size: 25,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface),
                                     ),
                                   ),
                                   title: Text(
@@ -280,12 +284,10 @@ class _MiniPlayerWidgetState extends State<MiniPlayerWidget>
         child: Container(
           height: 85,
           decoration: BoxDecoration(
-            color: isDarkTheme ? Colors.grey[900] : Colors.white, // Adapt color
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDarkTheme
-                  ? Colors.white.withOpacity(0.15)
-                  : Colors.black.withOpacity(0.15),
+              color: theme.colorScheme.onSurface.withOpacity(0.15),
             ),
             // boxShadow: [
             //   BoxShadow(

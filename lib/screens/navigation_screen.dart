@@ -23,7 +23,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
     final navigationController = Get.put(NavigationScreenController());
 
     final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
 
     return SafeArea(
       child: Scaffold(
@@ -40,11 +39,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
         ),
         bottomNavigationBar: Obx(
           () => NavigationBar(
-            backgroundColor: isDarkTheme ? Colors.grey[900] : Colors.grey[400],
+            backgroundColor: theme.colorScheme.surface,
             height: 60,
             elevation: 0,
             selectedIndex: navigationController.selectedIndex.value,
-            indicatorColor: isDarkTheme ? Colors.grey[400] : Colors.grey[900],
+            indicatorColor: theme.colorScheme.primary.withOpacity(0.1),
             onDestinationSelected: (value) =>
                 navigationController.selectedIndex.value = value,
             destinations: const [
@@ -61,16 +60,12 @@ class _NavigationScreenState extends State<NavigationScreen> {
         floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 100.0),
           child: FloatingActionButton(
-            backgroundColor: isDarkTheme ? Colors.white70 : Colors.grey[900],
             onPressed: () {
               setState(() {
                 isMiniPlayerVisible = !isMiniPlayerVisible; // Toggle visibility
               });
             },
-            child: Icon(
-              Iconsax.smileys,
-              color: isDarkTheme ? Colors.grey[900] : Colors.grey,
-            ),
+            child: const Icon(Iconsax.smileys),
           ),
         ),
       ),

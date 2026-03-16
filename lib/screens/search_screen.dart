@@ -11,12 +11,11 @@ class SearchScreen extends StatelessWidget {
     final controller = Get.put(PlayerController());
     final showSearchbar = false.obs;
     final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Search Songs'),
-        backgroundColor: isDarkTheme ? Colors.black : Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
       ),
       body: Column(
         children: [
@@ -49,7 +48,7 @@ class SearchScreen extends StatelessWidget {
               if (controller.isLoading.value) {
                 return Center(
                   child: CircularProgressIndicator(
-                    color: isDarkTheme ? Colors.white70 : Colors.grey[900],
+                    color: theme.colorScheme.primary,
                   ),
                 );
               }
@@ -108,14 +107,13 @@ class SearchScreen extends StatelessWidget {
                                   height: 120,
                                   width: 120,
                                   decoration: BoxDecoration(
-                                    color: isDarkTheme
-                                        ? Colors.black
-                                        : Colors.white,
+                                    color: theme.colorScheme.surface,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.music_note,
                                     size: 50,
+                                    color: theme.colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -125,8 +123,7 @@ class SearchScreen extends StatelessWidget {
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14,
+                                style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -135,9 +132,7 @@ class SearchScreen extends StatelessWidget {
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                ),
+                                style: theme.textTheme.bodySmall,
                               ),
                             ],
                           ),
@@ -155,12 +150,8 @@ class SearchScreen extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 175.0),
         child: FloatingActionButton(
           heroTag: 'searchFAB',
-          backgroundColor: isDarkTheme ? Colors.white70 : Colors.grey[900],
           onPressed: () => showSearchbar.toggle(),
-          child: Icon(
-            Icons.search_rounded,
-            color: isDarkTheme ? Colors.grey[900] : Colors.grey,
-          ),
+          child: const Icon(Icons.search_rounded),
         ),
       ),
     );

@@ -25,15 +25,7 @@ class AlbumSongScreen extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [Colors.black, Colors.grey[900]!]
-                  : [Colors.white, Colors.grey[100]!],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
+          color: theme.scaffoldBackgroundColor,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -55,10 +47,11 @@ class AlbumSongScreen extends StatelessWidget {
                         width: 100,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.grey[700],
+                          color: theme.colorScheme.surface,
                         ),
-                        child: const Icon(Icons.album,
-                            color: Colors.white70, size: 40),
+                        child: Icon(Icons.album,
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            size: 40),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -132,7 +125,7 @@ class AlbumSongScreen extends StatelessWidget {
                       return Material(
                         borderRadius: BorderRadius.circular(12),
                         elevation: 2,
-                        color: isDark ? Colors.grey[900] : Colors.white,
+                        color: theme.colorScheme.surface,
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(12),
                           leading: ClipRRect(
@@ -146,9 +139,9 @@ class AlbumSongScreen extends StatelessWidget {
                               nullArtworkWidget: Container(
                                 height: 50,
                                 width: 50,
-                                color: Colors.grey[800],
-                                child: const Icon(Icons.music_note,
-                                    color: Colors.white),
+                                color: theme.colorScheme.surface,
+                                child: Icon(Icons.music_note,
+                                    color: theme.colorScheme.onSurface),
                               ),
                             ),
                           ),
@@ -156,8 +149,7 @@ class AlbumSongScreen extends StatelessWidget {
                             song.displayNameWOExt,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isDark ? Colors.white : Colors.black87,
+                            style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -165,10 +157,7 @@ class AlbumSongScreen extends StatelessWidget {
                             song.artist ?? "Unknown Artist",
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color:
-                                  isDark ? Colors.grey[400] : Colors.grey[700],
-                            ),
+                            style: theme.textTheme.bodyMedium,
                           ),
                           trailing: const Icon(Icons.more_vert),
                           onTap: () => controller.playSong(song),
@@ -196,8 +185,6 @@ class AlbumSongScreen extends StatelessWidget {
       icon: Icon(icon, size: 20),
       label: Text(label),
       style: ElevatedButton.styleFrom(
-        backgroundColor: isDark ? Colors.white : Colors.black,
-        foregroundColor: isDark ? Colors.black : Colors.white,
         elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         shape: RoundedRectangleBorder(
