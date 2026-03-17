@@ -16,13 +16,15 @@ class NowPlayingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextEditingController playlistController = TextEditingController();
+    final theme = Theme.of(context);
 
     return Obx(() {
       final currentSong = controller.currentSongRx.value;
       if (currentSong == null || controller.currentPlaylist.isEmpty) {
-        return const Center(
+        return Center(
           child: Text("Select a song to play",
-              style: TextStyle(color: Colors.white, fontSize: 18)),
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(color: theme.colorScheme.onSurface)),
         );
       } else {
         return Stack(
@@ -39,15 +41,17 @@ class NowPlayingScreen extends StatelessWidget {
               keepOldArtwork: true,
               nullArtworkWidget: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: [Colors.redAccent, Colors.grey[900]!]),
+                  gradient: LinearGradient(colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.surface
+                  ]),
                 ),
               ),
             ),
             BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
-                color: Colors.black.withOpacity(0.3),
+                color: theme.colorScheme.scrim.withOpacity(0.3),
               ),
             ),
             Scaffold(
@@ -56,10 +60,8 @@ class NowPlayingScreen extends StatelessWidget {
                 title: Marquee(
                   child: Text(
                     currentSong.displayNameWOExt,
-                    style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold, color: Colors.white),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -90,9 +92,9 @@ class NowPlayingScreen extends StatelessWidget {
                       nullArtworkWidget: Container(
                         height: 300,
                         width: 300,
-                        color: Colors.grey[800],
-                        child: const Icon(Icons.music_note,
-                            size: 100, color: Colors.white),
+                        color: theme.colorScheme.surface,
+                        child: Icon(Icons.music_note,
+                            size: 100, color: theme.colorScheme.onSurface),
                       ),
                     ),
                   ),
@@ -102,7 +104,7 @@ class NowPlayingScreen extends StatelessWidget {
                     height: 250,
                     margin: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.15),
+                      color: theme.colorScheme.scrim.withOpacity(0.15),
                       border: Border.all(color: Colors.white, width: 1),
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -171,9 +173,7 @@ class NowPlayingScreen extends StatelessWidget {
                                                   shape: RoundedRectangleBorder(
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                              6)),
-                                                  backgroundColor:
-                                                      Colors.indigo),
+                                                              6))),
                                               child: const Text("Create"),
                                             ),
                                           ],
@@ -184,14 +184,13 @@ class NowPlayingScreen extends StatelessWidget {
                                           side: BorderSide.none,
                                           shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(6)),
-                                          backgroundColor: Colors.indigo),
+                                                  BorderRadius.circular(6))),
                                       child: const Text("Create"),
                                     ),
                                   ],
                                 );
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.playlist_add,
                                 color: Colors.white,
                               ),
@@ -262,8 +261,8 @@ class NowPlayingScreen extends StatelessWidget {
                           width: 270,
                           child: Text(
                             currentSong.artist!,
-                            style: const TextStyle(
-                                fontSize: 16, color: Colors.white),
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(color: Colors.white),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -289,11 +288,11 @@ class NowPlayingScreen extends StatelessWidget {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(_formatDuration(position),
-                                          style: const TextStyle(
-                                              color: Colors.white)),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(color: Colors.white)),
                                       Text(_formatDuration(total),
-                                          style: const TextStyle(
-                                              color: Colors.white)),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(color: Colors.white)),
                                     ],
                                   ),
                                 ),
@@ -301,16 +300,14 @@ class NowPlayingScreen extends StatelessWidget {
                                   value: controller.value.value,
                                   min: 0.0,
                                   max: controller.max.value,
-                                  // max: total.inSeconds
-                                  //     .toDouble()
-                                  //     .clamp(0.0, double.infinity),
                                   onChanged: (value) {
                                     controller.seekTo(
                                         Duration(seconds: value.toInt()));
                                   },
-                                  thumbColor: Colors.purpleAccent.shade400,
-                                  activeColor: Colors.indigo,
-                                  inactiveColor: Colors.grey,
+                                  thumbColor: theme.colorScheme.primary,
+                                  activeColor: theme.colorScheme.primary,
+                                  inactiveColor: theme.colorScheme.onSurface
+                                      .withOpacity(0.3),
                                 ),
                               ],
                             );
@@ -399,60 +396,181 @@ class NowPlayingScreen extends StatelessWidget {
 
 void showPlaylist(BuildContext context) {
   var controller = Get.find<PlayerController>();
+  final ScrollController scrollController = ScrollController();
+
+  // Function to scroll to current song with animation
+  void scrollToCurrentSong() {
+    if (!scrollController.hasClients) return;
+
+    final currentSong = controller.currentSongRx.value;
+    if (currentSong == null) return;
+
+    final currentIndex = controller.currentPlaylist.indexOf(currentSong);
+    if (currentIndex == -1) return;
+
+    const itemHeight = 72.0; // Estimated height of each ListTile
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetPosition = (itemHeight * currentIndex) - (screenHeight * 0.3);
+
+    scrollController.animateTo(
+      targetPosition.clamp(0, scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
 
   showModalBottomSheet(
-      backgroundColor: Colors.black.withOpacity(0.5),
-      context: context,
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          width: MediaQuery.of(context).size.width,
-          child: Obx(
-            () {
-              if (controller.currentPlaylist.isEmpty) {
-                return const Center(
-                  child: Text("No songs in the playlist",
-                      style: TextStyle(color: Colors.white, fontSize: 18)),
-                );
-              } else {
-                return ListView.builder(
-                  itemCount: controller.currentPlaylist.length,
-                  itemBuilder: (context, index) {
-                    final song = controller.currentPlaylist[index];
-                    return ListTile(
-                      leading: QueryArtworkWidget(
-                        id: song.id,
-                        type: ArtworkType.AUDIO,
-                        artworkBorder: BorderRadius.circular(6),
-                        artworkHeight: 50,
-                        artworkWidth: 50,
-                        artworkFit: BoxFit.cover,
-                        nullArtworkWidget: Container(
-                          height: 50,
-                          width: 50,
-                          color: Colors.grey[800],
-                          child: const Icon(Icons.music_note,
-                              size: 25, color: Colors.white),
+    backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.95),
+    context: context,
+    isScrollControlled: true,
+    builder: (context) {
+      // Trigger scroll after the bottom sheet is built and laid out
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => scrollToCurrentSong());
+
+      return SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Playlist title
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Current Playlist',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      title: Text(song.displayNameWOExt,
-                          style: const TextStyle(color: Colors.white)),
-                      subtitle: Text(song.artist ?? "Unknown Artist",
-                          style: const TextStyle(color: Colors.grey)),
-                      onTap: () {
-                        controller.setPlaylist(controller.currentPlaylist);
-                        controller.playPlaylist(
-                            controller.currentPlaylist, index);
-                        Get.back();
-                      },
-                    );
-                  },
-                );
-              }
-            },
-          ),
-        );
-      });
+                  ),
+                  Text(
+                    '${controller.currentPlaylist.length} songs',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            // Playlist
+            Expanded(
+              child: Obx(
+                () {
+                  return ListView.builder(
+                    controller: scrollController,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: controller.currentPlaylist.length,
+                    itemBuilder: (context, index) {
+                      final song = controller.currentPlaylist[index];
+                      final isCurrentSong =
+                          song.id == controller.currentSongRx.value?.id;
+
+                      return TweenAnimationBuilder<double>(
+                        duration: const Duration(milliseconds: 300),
+                        tween: Tween<double>(
+                          begin: 0,
+                          end: isCurrentSong ? 1 : 0,
+                        ),
+                        builder: (context, value, child) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: isCurrentSong
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.1 * value)
+                                  : Colors.transparent,
+                              border: Border(
+                                left: BorderSide(
+                                  color: isCurrentSong
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withOpacity(value)
+                                      : Colors.transparent,
+                                  width: 4,
+                                ),
+                              ),
+                            ),
+                            child: ListTile(
+                              leading: QueryArtworkWidget(
+                                id: song.id,
+                                type: ArtworkType.AUDIO,
+                                artworkBorder: BorderRadius.circular(6),
+                                artworkHeight: 50,
+                                artworkWidth: 50,
+                                keepOldArtwork: true,
+                                nullArtworkWidget: Container(
+                                  height: 50,
+                                  width: 50,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Theme.of(context).colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Icon(
+                                    Icons.music_note,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                    size: 30,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                song.displayNameWOExt,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: isCurrentSong
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                song.artist ?? 'Unknown Artist',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: isCurrentSong
+                                  ? const Icon(
+                                      Icons.graphic_eq_rounded,
+                                      color: Colors.white,
+                                    )
+                                  : null,
+                              onTap: () {
+                                controller.playPlaylist(
+                                  controller.currentPlaylist,
+                                  index,
+                                );
+                                Navigator.pop(context);
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 void showBpmCategories(BuildContext context, SongModel currentSong) {

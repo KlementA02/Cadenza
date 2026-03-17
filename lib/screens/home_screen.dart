@@ -12,11 +12,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
     var controller = Get.put(PlayerController());
     return SafeArea(
       child: Scaffold(
-        backgroundColor: isDarkTheme ? Colors.black : Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         body: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -26,10 +25,11 @@ class HomeScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 20,
-                      backgroundColor: Colors.indigo,
-                      child: Icon(Icons.person, color: Colors.white),
+                      backgroundColor: theme.colorScheme.primary,
+                      child: Icon(Icons.person,
+                          color: theme.colorScheme.onPrimary),
                     ),
                     IconButton(
                         onPressed: () {}, icon: const Icon(Icons.settings))
@@ -52,15 +52,14 @@ class HomeScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       gradient: LinearGradient(
-                        colors: isDarkTheme
-                            ? [Colors.grey[900]!, Colors.black87]
-                            : [Colors.deepPurple.shade100, Colors.white],
+                        colors: [
+                          theme.colorScheme.primary.withOpacity(0.1),
+                          theme.colorScheme.surface,
+                        ],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: isDarkTheme
-                              ? Colors.black54
-                              : Colors.grey.shade300,
+                          color: theme.colorScheme.shadow.withOpacity(0.15),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -79,8 +78,9 @@ class HomeScreen extends StatelessWidget {
                             nullArtworkWidget: Container(
                               width: 80,
                               height: 80,
-                              color: Colors.grey,
-                              child: const Icon(Icons.music_note, size: 40),
+                              color: theme.colorScheme.surface,
+                              child: Icon(Icons.music_note,
+                                  size: 40, color: theme.colorScheme.onSurface),
                             ),
                           ),
                         ),
@@ -91,17 +91,15 @@ class HomeScreen extends StatelessWidget {
                             children: [
                               Text(
                                 song?.title ?? 'No song playing',
-                                style: const TextStyle(
+                                style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 18,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 song?.artist ?? '',
-                                style: const TextStyle(
-                                    fontSize: 14, color: Colors.grey),
+                                style: theme.textTheme.bodyMedium,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -189,9 +187,7 @@ class HomeScreen extends StatelessWidget {
 
                       return Container(
                         decoration: BoxDecoration(
-                          color: isDarkTheme
-                              ? Colors.grey[850]
-                              : Colors.deepPurple.shade50,
+                          color: theme.colorScheme.surface,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
@@ -201,11 +197,8 @@ class HomeScreen extends StatelessWidget {
                               padding: const EdgeInsets.all(12.0),
                               child: Text(
                                 category,
-                                style: TextStyle(
-                                  fontSize: 16,
+                                style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      isDarkTheme ? Colors.white : Colors.black,
                                 ),
                               ),
                             ),
@@ -238,11 +231,13 @@ class HomeScreen extends StatelessWidget {
                                               nullArtworkWidget: Container(
                                                 height: 120,
                                                 width: 120,
-                                                color: Colors.grey[800],
-                                                child: const Icon(
+                                                color:
+                                                    theme.colorScheme.surface,
+                                                child: Icon(
                                                   Icons.music_note,
                                                   size: 40,
-                                                  color: Colors.white,
+                                                  color: theme
+                                                      .colorScheme.onSurface,
                                                 ),
                                               ),
                                             ),
@@ -253,12 +248,7 @@ class HomeScreen extends StatelessWidget {
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                             textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: isDarkTheme
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                            ),
+                                            style: theme.textTheme.bodySmall,
                                           ),
                                         ],
                                       ),
@@ -297,7 +287,7 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.deepPurple,
+            backgroundColor: Theme.of(Get.context!).colorScheme.primary,
             radius: 22,
             child: Icon(icon, color: Colors.white),
           ),
@@ -325,7 +315,6 @@ class TrackWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
     var controller = Get.put(PlayerController());
     return GestureDetector(
       onTap: () {
@@ -337,10 +326,10 @@ class TrackWidget extends StatelessWidget {
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: isDarkTheme ? Colors.grey[900] : Colors.white,
+          color: theme.colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: isDarkTheme ? Colors.black54 : Colors.deepPurple.shade100,
+              color: theme.colorScheme.shadow.withOpacity(0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -371,10 +360,9 @@ class TrackWidget extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: theme.textTheme.titleSmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
                   ),
                 ),
               ),

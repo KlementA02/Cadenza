@@ -9,7 +9,6 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:on_audio_query_forked/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PlayerController extends GetxController {
@@ -17,6 +16,9 @@ class PlayerController extends GetxController {
   final audioQuery = OnAudioQuery();
   final playIndex = 0.obs;
   final isPlaying = false.obs;
+  final Rx<OrderType> currentOrderType = OrderType.ASC_OR_SMALLER.obs;
+  final Rx<SongSortType> currentSortType = SongSortType.TITLE.obs;
+  final RxBool ignoreCase = true.obs;
 
   final Rx<SongModel?> currentSongRx = Rx<SongModel?>(null);
 
@@ -38,9 +40,20 @@ class PlayerController extends GetxController {
   var playlistSongs = <int, List<SongModel>>{}.obs;
 
   RxList<SongModel> currentPlaylist = <SongModel>[].obs;
+  RxList<SongModel> albumSongs = <SongModel>[].obs;
   RxList<SongModel> searchResults = <SongModel>[].obs;
 
   RxList<AlbumModel> currentAlbum = <AlbumModel>[].obs;
+
+  Future<void> changeOrderType(OrderType newOrder) async {
+    currentOrderType.value = newOrder;
+    await refreshSongs();
+  }
+
+  Future<void> changeSortType(SongSortType newOrder) async {
+    currentSortType.value = newOrder;
+    await refreshSongs();
+  }
 
   // BPM Categories
   final Map<String, RxList<SongModel>> bpmCategories = {
@@ -134,34 +147,51 @@ class PlayerController extends GetxController {
 
   Future<void> checkPermission() async {
     if (Platform.isAndroid) {
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      final sdk = androidInfo.version.sdkInt;
+      // Determine if we are on Android 13 (API 33) or higher
+      // We can use the permission_handler's internal logic or request both
+      // Requesting 'audio' on < 33 will simply return 'granted' if storage is granted
+      // Requesting 'storage' on >= 33 is deprecated but still works for some legacy cases
+      
+      // Modern approach with permission_handler:
+      Map<Permission, PermissionStatus> statuses;
+      
+      // Check if we can use the 'audio' permission (Android 13+)
+      // Alternatively, we can use a simple SDK check via Platform.operatingSystemVersion
+      // but permission_handler handles the complexity well if we request what we need.
+      
+      if (await _isAndroid13OrHigher()) {
+        statuses = await [Permission.audio].request();
+      } else {
+        statuses = await [Permission.storage].request();
+      }
 
-      final perm = sdk >= 33 ? Permission.audio : Permission.storage;
-
-      var status = await perm.status;
-      if (status.isGranted) {
+      if (statuses.values.every((status) => status.isGranted)) {
         await fetchSongs();
-      } else if (status.isDenied) {
-        var result = await perm.request();
-        if (result.isGranted) {
-          await fetchSongs();
-        } else if (result.isPermanentlyDenied) {
-          // Show rationale and Open App Settings
-          Get.defaultDialog(
-            title: "Permission Required",
-            content: const Text("Enable permission in settings."),
-            confirm: ElevatedButton(
-              onPressed: () {
-                openAppSettings();
-                Get.back();
-              },
-              child: const Text("Open Settings"),
-            ),
-          );
-        }
+      } else if (statuses.values.any((status) => status.isPermanentlyDenied)) {
+        Get.defaultDialog(
+          title: "Permission Required",
+          content: const Text("Enable permission in settings to access your music."),
+          confirm: ElevatedButton(
+            onPressed: () {
+              openAppSettings();
+              Get.back();
+            },
+            child: const Text("Open Settings"),
+          ),
+        );
       }
     }
+  }
+
+  Future<bool> _isAndroid13OrHigher() async {
+    if (!Platform.isAndroid) return false;
+    // Extract SDK version from operatingSystemVersion (e.g., "Android 13 (API 33)")
+    final sdkMatch = RegExp(r'API (\d+)').firstMatch(Platform.operatingSystemVersion);
+    if (sdkMatch != null) {
+      final sdkInt = int.tryParse(sdkMatch.group(1) ?? '');
+      return sdkInt != null && sdkInt >= 33;
+    }
+    return false;
   }
 
   Future<void> fetchSongs() async {
@@ -174,9 +204,24 @@ class PlayerController extends GetxController {
     isLoading.value = true;
     try {
       var fetchedSongs = await audioQuery.querySongs(
-        ignoreCase: true,
-        orderType: OrderType.ASC_OR_SMALLER,
-        sortType: null,
+        ignoreCase: ignoreCase.value,
+        orderType: currentOrderType.value,
+        sortType: currentSortType.value,
+        uriType: UriType.EXTERNAL,
+      );
+      currentPlaylist.assignAll(fetchedSongs);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshSongs() async {
+    isLoading.value = true;
+    try {
+      var fetchedSongs = await audioQuery.querySongs(
+        ignoreCase: ignoreCase.value,
+        orderType: currentOrderType.value,
+        sortType: currentSortType.value,
         uriType: UriType.EXTERNAL,
       );
       currentPlaylist.assignAll(fetchedSongs);
@@ -224,7 +269,7 @@ class PlayerController extends GetxController {
         ignoreCase: true,
         orderType: OrderType.ASC_OR_SMALLER,
       );
-      currentPlaylist.assignAll(songs);
+      albumSongs.assignAll(songs);
     } finally {
       isLoading.value = false;
     }
